@@ -1,6 +1,6 @@
-export type CategoryId = 'uni' | 'cy' | 'lg' | 'hi' | 'is' | 'rd' | 'bo';
+export type CategoryId = string;
 export type Task = { id: string; text: string };
-export type DailyPlan = Record<CategoryId, Task[]>;
+export type DailyPlan = Record<string, Task[]>;
 export type CategoryMeta = { icon: string; name: string; hours: string; color: string };
 
 export const DEFAULT_START = '2026-10-08';

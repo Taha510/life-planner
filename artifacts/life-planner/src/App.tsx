@@ -1,13 +1,24 @@
-import { useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type KeyboardEvent } from 'react';
 import {
   addDays, banners, CATEGORIES, dateKey, dayDistance, DEFAULT_END, DEFAULT_START,
-  FLOW, isValidIsoDate, makePlan, monthLabel, monthStart, TIPS, toDate, type CategoryId,
+  FLOW, isValidIsoDate, makePlan, monthLabel, monthStart, TIPS, toDate,
+  type CategoryMeta, type Task,
 } from './planner-data';
 
 type DateRange = { startDate: string; endDate: string };
 type Checks = Record<string, string[]>;
 type Overrides = Record<string, Record<string, string>>;
 type Theme = 'light' | 'dark' | 'system';
+type FlowItem = { id: string; time: string; description: string };
+type Topic = CategoryMeta & { id: string };
+type PlannerStructure = {
+  customTopics: Topic[];
+  hiddenTopicIds: string[];
+  topicDetails: Record<string, { name: string; hours: string }>;
+  deletedTaskIds: Record<string, string[]>;
+  addedTasks: Record<string, Task[]>;
+  flow: FlowItem[];
+};
 
 function loadJson<T>(key: string, fallback: T): T {
   try {
@@ -39,20 +50,100 @@ function loadChecks(): Checks {
 function saveLocal(key: string, value: unknown) {
   try { localStorage.setItem(`lp:${key}`, JSON.stringify(value)); } catch { /* Device storage may be unavailable. */ }
 }
+function defaultStructure(): PlannerStructure {
+  return {
+    customTopics: [],
+    hiddenTopicIds: [],
+    topicDetails: {},
+    deletedTaskIds: {},
+    addedTasks: {},
+    flow: FLOW.map(([time, description], index) => ({ id: `flow-${index}`, time, description })),
+  };
+}
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+function loadStringArrays(value: unknown): Record<string, string[]> {
+  if (!isRecord(value)) return {};
+  return Object.fromEntries(Object.entries(value).filter((entry): entry is [string, string[]] =>
+    Array.isArray(entry[1]) && entry[1].every((item) => typeof item === 'string')));
+}
+function loadTasks(value: unknown): Record<string, Task[]> {
+  if (!isRecord(value)) return {};
+  return Object.fromEntries(Object.entries(value).filter((entry): entry is [string, Task[]] =>
+    Array.isArray(entry[1]) && entry[1].every((task) =>
+      isRecord(task) && typeof task.id === 'string' && typeof task.text === 'string')));
+}
+function loadStructure(): PlannerStructure {
+  const stored = loadJson<Partial<PlannerStructure>>('structure', {});
+  const defaults = defaultStructure();
+  const customTopics = Array.isArray(stored.customTopics)
+    ? stored.customTopics.filter((topic): topic is Topic =>
+      isRecord(topic) && typeof topic.id === 'string' && typeof topic.name === 'string'
+      && typeof topic.hours === 'string' && typeof topic.icon === 'string' && typeof topic.color === 'string')
+    : [];
+  const topicDetails = isRecord(stored.topicDetails)
+    ? Object.fromEntries(Object.entries(stored.topicDetails).filter((entry) =>
+      isRecord(entry[1]) && typeof entry[1].name === 'string' && typeof entry[1].hours === 'string')
+      .map(([id, details]) => [id, { name: (details as { name: string }).name, hours: (details as { hours: string }).hours }]))
+    : {};
+  const flow = Array.isArray(stored.flow)
+    ? stored.flow.filter((item): item is FlowItem =>
+      isRecord(item) && typeof item.id === 'string' && typeof item.time === 'string' && typeof item.description === 'string')
+    : defaults.flow;
+  return {
+    customTopics,
+    hiddenTopicIds: Array.isArray(stored.hiddenTopicIds)
+      ? stored.hiddenTopicIds.filter((id): id is string => typeof id === 'string') : [],
+    topicDetails,
+    deletedTaskIds: loadStringArrays(stored.deletedTaskIds),
+    addedTasks: loadTasks(stored.addedTasks),
+    flow,
+  };
+}
+function topicsFor(structure: PlannerStructure): Topic[] {
+  const builtIn = Object.entries(CATEGORIES)
+    .filter(([id]) => !structure.hiddenTopicIds.includes(id))
+    .map(([id, meta]) => ({ id, ...meta, ...structure.topicDetails[id] }));
+  return [...builtIn, ...structure.customTopics];
+}
+function planForDate(date: Date, structure: PlannerStructure): Record<string, Task[]> {
+  const generated = makePlan(date);
+  return Object.fromEntries(topicsFor(structure).map((topic) => {
+    const deleted = new Set(structure.deletedTaskIds[topic.id] ?? []);
+    const generatedTasks = (generated[topic.id] ?? []).filter((task) => !deleted.has(task.id));
+    return [topic.id, [...generatedTasks, ...(structure.addedTasks[topic.id] ?? [])]];
+  }));
+}
 function clampDate(value: string, range: DateRange): string {
   if (value < range.startDate) return range.startDate;
   if (value > range.endDate) return range.endDate;
   return value;
 }
-function countTasks(date: Date): number {
-  return Object.values(makePlan(date)).reduce((total, tasks) => total + tasks.length, 0);
+function countTasks(date: Date, structure: PlannerStructure): number {
+  return Object.values(planForDate(date, structure)).reduce((total, tasks) => total + tasks.length, 0);
 }
-function progressFor(date: Date, checks: Checks): number {
-  const total = countTasks(date);
+function progressFor(date: Date, checks: Checks, structure: PlannerStructure): number {
+  const plan = planForDate(date, structure);
+  const total = countTasks(date, structure);
   if (total === 0) return 0;
-  const validIds = new Set(Object.values(makePlan(date)).flatMap((tasks) => tasks.map((task) => task.id)));
+  const validIds = new Set(Object.values(plan).flatMap((tasks) => tasks.map((task) => task.id)));
   const complete = (checks[dateKey(date)] ?? []).filter((id) => validIds.has(id)).length;
   return complete / total;
+}
+function belongsToTopic(taskId: string, topicId: string): boolean {
+  const suffix = taskId.slice(topicId.length);
+  return taskId.startsWith(`custom:${topicId}:`) || (suffix.length > 0 && /^\d+$/.test(suffix));
+}
+function removeTaskFromRecord(record: Record<string, string[]>, ids: Set<string>): Record<string, string[]> {
+  return Object.fromEntries(Object.entries(record)
+    .map(([key, values]) => [key, values.filter((id) => !ids.has(id))] as const)
+    .filter(([, values]) => values.length));
+}
+function removeTaskOverrides(record: Overrides, ids: Set<string>): Overrides {
+  return Object.fromEntries(Object.entries(record)
+    .map(([date, values]) => [date, Object.fromEntries(Object.entries(values).filter(([id]) => !ids.has(id)))] as const)
+    .filter(([, values]) => Object.keys(values).length));
 }
 function initialSelectedDate(range: DateRange): string {
   const now = dateKey(new Date());
@@ -64,6 +155,7 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(() => initialSelectedDate(loadRange()));
   const [checks, setChecks] = useState<Checks>(loadChecks);
   const [overrides, setOverrides] = useState<Overrides>(() => loadJson<Overrides>('overrides', {}));
+  const [structure, setStructure] = useState<PlannerStructure>(loadStructure);
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = loadJson<Theme | null>('theme', null);
     return saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'system';
@@ -71,12 +163,20 @@ function App() {
   const [calendarMonth, setCalendarMonth] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  const [flowDraft, setFlowDraft] = useState<FlowItem | null>(null);
+  const [topicDraft, setTopicDraft] = useState<{ id: string; name: string; hours: string } | null>(null);
+  const [newTopicOpen, setNewTopicOpen] = useState(false);
+  const [newTopicName, setNewTopicName] = useState('');
+  const [newTopicHours, setNewTopicHours] = useState('');
+  const [addingTaskTo, setAddingTaskTo] = useState<string | null>(null);
+  const [newTaskText, setNewTaskText] = useState('');
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme === 'system' ? '' : theme;
     saveLocal('theme', theme);
   }, [theme]);
   useEffect(() => saveLocal('range', range), [range]);
+  useEffect(() => saveLocal('structure', structure), [structure]);
   useEffect(() => {
     saveLocal('checks', checks);
     Object.entries(checks).forEach(([date, ids]) => saveLocal(date, ids));
@@ -84,7 +184,8 @@ function App() {
   useEffect(() => saveLocal('overrides', overrides), [overrides]);
 
   const selected = toDate(selectedDate);
-  const plan = useMemo(() => makePlan(selected), [selectedDate]);
+  const topics = useMemo(() => topicsFor(structure), [structure]);
+  const plan = useMemo(() => planForDate(selected, structure), [selectedDate, structure]);
   const selectedChecks = checks[selectedDate] ?? [];
   const allTasks = Object.values(plan).flat();
   const selectedProgress = allTasks.length ? selectedChecks.filter((id) => allTasks.some((task) => task.id === id)).length / allTasks.length : 0;
@@ -109,6 +210,107 @@ function App() {
       const next = checked ? [...new Set([...current, taskId])] : current.filter((id) => id !== taskId);
       return { ...previous, [selectedDate]: next };
     });
+  };
+  const saveFlow = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!flowDraft?.time.trim() || !flowDraft.description.trim()) return;
+    setStructure((previous) => ({
+      ...previous,
+      flow: previous.flow.some((item) => item.id === flowDraft.id)
+        ? previous.flow.map((item) => item.id === flowDraft.id ? flowDraft : item)
+        : [...previous.flow, flowDraft],
+    }));
+    setFlowDraft(null);
+  };
+  const deleteFlow = (item: FlowItem) => {
+    if (!window.confirm(`Delete the “${item.time}” block?`)) return;
+    setStructure((previous) => ({ ...previous, flow: previous.flow.filter((entry) => entry.id !== item.id) }));
+    if (flowDraft?.id === item.id) setFlowDraft(null);
+  };
+  const saveTopic = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!topicDraft?.name.trim()) return;
+    const name = topicDraft.name.trim();
+    const hours = topicDraft.hours.trim();
+    setStructure((previous) => previous.customTopics.some((topic) => topic.id === topicDraft.id)
+      ? { ...previous, customTopics: previous.customTopics.map((topic) => topic.id === topicDraft.id ? { ...topic, name, hours } : topic) }
+      : { ...previous, topicDetails: { ...previous.topicDetails, [topicDraft.id]: { name, hours } } });
+    setTopicDraft(null);
+  };
+  const addTopic = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const name = newTopicName.trim();
+    if (!name) return;
+    const id = `topic-${crypto.randomUUID()}`;
+    const colors = ['#6c5ce7', '#00b894', '#e17055', '#4d7cfe', '#e84393', '#0a9396'];
+    setStructure((previous) => ({
+      ...previous,
+      customTopics: [...previous.customTopics, {
+        id, name, hours: newTopicHours.trim() || 'custom', icon: '📌',
+        color: colors[previous.customTopics.length % colors.length],
+      }],
+    }));
+    setNewTopicName('');
+    setNewTopicHours('');
+    setNewTopicOpen(false);
+  };
+  const addTask = (event: FormEvent<HTMLFormElement>, topicId: string) => {
+    event.preventDefault();
+    const text = newTaskText.trim();
+    if (!text) return;
+    const id = `custom:${topicId}:${crypto.randomUUID()}`;
+    setStructure((previous) => ({
+      ...previous,
+      addedTasks: { ...previous.addedTasks, [topicId]: [...(previous.addedTasks[topicId] ?? []), { id, text }] },
+    }));
+    setNewTaskText('');
+    setAddingTaskTo(null);
+  };
+  const deleteTask = (topicId: string, task: Task) => {
+    if (!window.confirm(`Delete “${task.text}” from this topic on every date? Its saved completion history will also be removed.`)) return;
+    const isAddedTask = (structure.addedTasks[topicId] ?? []).some((item) => item.id === task.id);
+    if (isAddedTask) {
+      setStructure((previous) => ({
+        ...previous,
+        addedTasks: {
+          ...previous.addedTasks,
+          [topicId]: (previous.addedTasks[topicId] ?? []).filter((item) => item.id !== task.id),
+        },
+      }));
+    } else {
+      setStructure((previous) => ({
+        ...previous,
+        deletedTaskIds: {
+          ...previous.deletedTaskIds,
+          [topicId]: [...new Set([...(previous.deletedTaskIds[topicId] ?? []), task.id])],
+        },
+      }));
+    }
+    const deleted = new Set([task.id]);
+    setChecks((previous) => removeTaskFromRecord(previous, deleted));
+    setOverrides((previous) => removeTaskOverrides(previous, deleted));
+    if (editingId === task.id) setEditingId(null);
+  };
+  const deleteTopic = (topic: Topic) => {
+    if (!window.confirm(`Delete “${topic.name}” and all its tasks from every date? Its saved completion history will also be removed.`)) return;
+    const taskIds = new Set([
+      ...(plan[topic.id] ?? []).map((task) => task.id),
+      ...Object.values(checks).flat(),
+      ...Object.values(overrides).flatMap((items) => Object.keys(items)),
+    ].filter((id) => belongsToTopic(id, topic.id)));
+    setStructure((previous) => ({
+      ...previous,
+      customTopics: previous.customTopics.filter((item) => item.id !== topic.id),
+      hiddenTopicIds: CATEGORIES[topic.id] && !previous.hiddenTopicIds.includes(topic.id)
+        ? [...previous.hiddenTopicIds, topic.id] : previous.hiddenTopicIds,
+      topicDetails: Object.fromEntries(Object.entries(previous.topicDetails).filter(([id]) => id !== topic.id)),
+      deletedTaskIds: Object.fromEntries(Object.entries(previous.deletedTaskIds).filter(([id]) => id !== topic.id)),
+      addedTasks: Object.fromEntries(Object.entries(previous.addedTasks).filter(([id]) => id !== topic.id)),
+    }));
+    setChecks((previous) => removeTaskFromRecord(previous, taskIds));
+    setOverrides((previous) => removeTaskOverrides(previous, taskIds));
+    if (topicDraft?.id === topic.id) setTopicDraft(null);
+    if (addingTaskTo === topic.id) setAddingTaskTo(null);
   };
   const changeStart = (value: string) => {
     if (!isValidIsoDate(value)) return;
@@ -166,7 +368,7 @@ function App() {
     let total = 0;
     while (current >= 0 && current < duration) {
       const date = addDays(toDate(range.startDate), current);
-      if (progressFor(date, checks) >= .7) total++;
+      if (progressFor(date, checks, structure) >= .7) total++;
       else if (dateKey(date) < today) break;
       current--;
     }
@@ -250,20 +452,104 @@ function App() {
           ))}
         </div>
         <section className="flow reveal" id="flow" aria-label="Daily flow">
-          {FLOW.map(([time, description]) => <div key={time}><b>{time}</b>{description}</div>)}
+          {structure.flow.map((item) => (
+            flowDraft?.id === item.id ? (
+              <form className="flow-edit-form" key={item.id} onSubmit={saveFlow} data-testid={`form-edit-flow-${item.id}`}>
+                <label>Block name
+                  <input autoFocus value={flowDraft.time} onChange={(event) => setFlowDraft({ ...flowDraft, time: event.currentTarget.value })} required />
+                </label>
+                <label>Description
+                  <input value={flowDraft.description} onChange={(event) => setFlowDraft({ ...flowDraft, description: event.currentTarget.value })} required />
+                </label>
+                <span className="flow-controls">
+                  <button type="submit" className="save">Save</button>
+                  <button type="button" onClick={() => setFlowDraft(null)}>Cancel</button>
+                </span>
+              </form>
+            ) : (
+              <article className="flow-item" key={item.id} data-testid={`flow-block-${item.id}`}>
+                <b>{item.time}</b>
+                <span className="flow-description">{item.description}</span>
+                <span className="flow-controls">
+                  <button type="button" aria-label={`Edit ${item.time} block`} onClick={() => setFlowDraft({ ...item })}>Edit</button>
+                  <button type="button" aria-label={`Delete ${item.time} block`} onClick={() => deleteFlow(item)}>Delete</button>
+                </span>
+              </article>
+            )
+          ))}
+          {flowDraft && !structure.flow.some((item) => item.id === flowDraft.id) && (
+            <form className="flow-edit-form" onSubmit={saveFlow} data-testid="form-add-flow">
+              <label>Block name
+                <input autoFocus value={flowDraft.time} onChange={(event) => setFlowDraft({ ...flowDraft, time: event.currentTarget.value })} placeholder="e.g. Morning" required />
+              </label>
+              <label>Description
+                <input value={flowDraft.description} onChange={(event) => setFlowDraft({ ...flowDraft, description: event.currentTarget.value })} placeholder="What happens in this block?" required />
+              </label>
+              <span className="flow-controls">
+                <button type="submit" className="save">Add block</button>
+                <button type="button" onClick={() => setFlowDraft(null)}>Cancel</button>
+              </span>
+            </form>
+          )}
         </section>
+        <button
+          type="button"
+          className="secondary-action add-flow-button"
+          data-testid="button-add-flow"
+          onClick={() => setFlowDraft({ id: `flow-${crypto.randomUUID()}`, time: '', description: '' })}
+        >+ Add time block</button>
 
         <section id="cards" aria-label="Daily tasks">
-          {(Object.keys(CATEGORIES) as CategoryId[]).map((category, categoryIndex) => {
-            const meta = CATEGORIES[category];
-            const tasks = plan[category];
+          <div className="manage-toolbar">
+            <span>Daily topics</span>
+            <button type="button" className="secondary-action" data-testid="button-add-topic" onClick={() => setNewTopicOpen((open) => !open)}>+ Add topic</button>
+          </div>
+          {newTopicOpen && (
+            <form className="topic-create-form" onSubmit={addTopic} data-testid="form-add-topic">
+              <label>Topic name
+                <input autoFocus value={newTopicName} onChange={(event) => setNewTopicName(event.currentTarget.value)} placeholder="e.g. Fitness" required />
+              </label>
+              <label>Daily time (optional)
+                <input value={newTopicHours} onChange={(event) => setNewTopicHours(event.currentTarget.value)} placeholder="e.g. 30 min" />
+              </label>
+              <span className="topic-create-actions">
+                <button type="submit" className="save">Add topic</button>
+                <button type="button" onClick={() => setNewTopicOpen(false)}>Cancel</button>
+              </span>
+            </form>
+          )}
+          {topics.map((topic, categoryIndex) => {
+            const meta = topic;
+            const category = topic.id;
+            const tasks = plan[category] ?? [];
             const completed = tasks.filter((task) => selectedChecks.includes(task.id)).length;
             return (
               <article className="task-card" key={category} style={{ '--category-color': meta.color, animationDelay: `${categoryIndex * 70}ms` } as CSSProperties} data-testid={`card-category-${category}`}>
                 <div className="ch">
-                  <span className="icon" aria-hidden="true">{meta.icon}</span>
-                  <h3>{meta.name}</h3>
-                  <em>{meta.hours}</em>
+                  {topicDraft?.id === category ? (
+                    <form className="topic-edit-form" onSubmit={saveTopic} data-testid={`form-edit-topic-${category}`}>
+                      <label>Topic name
+                        <input autoFocus value={topicDraft.name} onChange={(event) => setTopicDraft({ ...topicDraft, name: event.currentTarget.value })} required />
+                      </label>
+                      <label>Daily time
+                        <input value={topicDraft.hours} onChange={(event) => setTopicDraft({ ...topicDraft, hours: event.currentTarget.value })} />
+                      </label>
+                      <span className="topic-create-actions">
+                        <button type="submit" className="save">Save</button>
+                        <button type="button" onClick={() => setTopicDraft(null)}>Cancel</button>
+                      </span>
+                    </form>
+                  ) : (
+                    <>
+                      <span className="icon" aria-hidden="true">{meta.icon}</span>
+                      <h3>{meta.name}</h3>
+                      {meta.hours && <em>{meta.hours}</em>}
+                      <span className="topic-controls">
+                        <button type="button" className="manage-button" aria-label={`Edit topic ${meta.name}`} data-testid={`button-edit-topic-${category}`} onClick={() => setTopicDraft({ id: category, name: meta.name, hours: meta.hours })}>Edit</button>
+                        <button type="button" className="manage-button delete-action" aria-label={`Delete topic ${meta.name}`} data-testid={`button-delete-topic-${category}`} onClick={() => deleteTopic(topic)}>Delete</button>
+                      </span>
+                    </>
+                  )}
                 </div>
                 <div className="bar" role="progressbar" aria-label={`${meta.name} progress`} aria-valuenow={completed} aria-valuemin={0} aria-valuemax={tasks.length}>
                   <i style={{ width: `${tasks.length ? completed / tasks.length * 100 : 0}%` }} />
@@ -320,12 +606,29 @@ function App() {
                               data-testid={`button-restore-task-${task.id}`}
                               onClick={() => restoreGenerated(task.id)}
                             >Restore</button>}
+                            <button
+                              type="button"
+                              className="task-edit delete-action"
+                              aria-label={`Delete task: ${text}`}
+                              data-testid={`button-delete-task-${task.id}`}
+                              onClick={() => deleteTask(category, task)}
+                            >Delete</button>
                           </div>
                         </>
                       )}
                     </div>
                   );
                 })}
+                {addingTaskTo === category ? (
+                  <form className="add-task-form" onSubmit={(event) => addTask(event, category)} data-testid={`form-add-task-${category}`}>
+                    <label className="sr-only" htmlFor={`new-task-${category}`}>New checkbox for {meta.name}</label>
+                    <input id={`new-task-${category}`} autoFocus value={newTaskText} onChange={(event) => setNewTaskText(event.currentTarget.value)} placeholder="Type a task" required />
+                    <button type="submit" className="save">Add checkbox</button>
+                    <button type="button" onClick={() => { setAddingTaskTo(null); setNewTaskText(''); }}>Cancel</button>
+                  </form>
+                ) : (
+                  <button type="button" className="card-add-task" data-testid={`button-add-task-${category}`} onClick={() => setAddingTaskTo(category)}>+ Add checkbox</button>
+                )}
               </article>
             );
           })}
@@ -354,7 +657,7 @@ function App() {
             const date = new Date(activeMonth.getFullYear(), activeMonth.getMonth(), index + 1);
             const key = dateKey(date);
             const inRange = key >= range.startDate && key <= range.endDate;
-            const ratio = inRange ? progressFor(date, checks) : 0;
+            const ratio = inRange ? progressFor(date, checks, structure) : 0;
             return <button
               type="button"
               role="gridcell"

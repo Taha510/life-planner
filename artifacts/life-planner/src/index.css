@@ -171,3 +171,87 @@ footer { text-align:center; color:var(--mu); font-size:13px; margin-top:40px; }
 @media(prefers-reduced-motion:reduce) {
   *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; }
 }
+
+/* Planner customization controls */
+.flow > .flow-item,
+.flow > .flow-edit-form {
+  min-width: 0;
+  background: var(--card);
+  border: 1px solid var(--bd);
+  border-radius: 14px;
+  padding: 10px 12px;
+  color: var(--mu);
+  font-size: 13px;
+}
+.flow > .flow-item { display: flex; flex-direction: column; gap: 4px; }
+.flow > .flow-item b { color: var(--tx); }
+.flow-description { min-height: 2.5em; }
+.flow-controls,.topic-controls,.topic-create-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.flow-controls { justify-content: flex-end; margin-top: auto; padding-top: 6px; }
+.flow-controls button,.topic-create-actions button,.add-task-form button {
+  color: var(--mu);
+  border: 1px solid var(--bd);
+  background: var(--card);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.flow-controls .save,.topic-create-actions .save,.add-task-form .save {
+  color: white;
+  background: var(--ac);
+  border-color: var(--ac);
+}
+.flow-edit-form,.topic-create-form,.topic-edit-form {
+  display: grid;
+  gap: 8px;
+}
+.flow-edit-form label,.topic-create-form label,.topic-edit-form label {
+  display: grid;
+  gap: 3px;
+  color: var(--mu);
+  font-size: 12px;
+}
+.flow-edit-form input,.topic-create-form input,.topic-edit-form input,.add-task-form input {
+  width: 100%;
+  min-width: 0;
+  color: var(--tx);
+  background: var(--bg);
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-size: 14px;
+}
+.flow-edit-form .flow-controls { justify-content: flex-start; }
+.secondary-action,.manage-button {
+  color: var(--mu);
+  background: var(--card);
+  border: 1px solid var(--bd);
+  border-radius: 9px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.secondary-action:hover,.manage-button:hover { color: var(--ac); border-color: var(--ac); }
+.add-flow-button { margin: 0 0 18px; }
+.manage-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.manage-toolbar > span { color: var(--mu); font-size: 14px; font-weight: 600; }
+.topic-create-form { margin: 0 0 14px; padding: 14px; background: var(--card); border: 1px solid var(--bd); border-radius: 14px; }
+.topic-create-actions { margin-top: 2px; }
+.ch { flex-wrap: wrap; }
+.ch .topic-controls { margin-left: auto; }
+.ch .topic-edit-form { flex: 1 0 100%; }
+.manage-button { padding: 4px 7px; background: transparent; }
+.delete-action { color: #bf4a5b !important; }
+.task-row .task-controls { flex-shrink: 0; }
+.task-row .task-edit { opacity: .8; border: 1px solid transparent; }
+.task-row .task-edit:hover { border-color: var(--bd); background: var(--card); }
+.add-task-form { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 8px 4px 2px; }
+.add-task-form input { flex: 1 1 150px; }
+.card-add-task { margin: 9px 3px 2px; color: var(--ac); background: transparent; border: 1px dashed var(--bd); border-radius: 9px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+.card-add-task:hover { border-color: var(--ac); background: var(--bg); }
+@media(max-width:520px) {
+  .flow > .flow-item { min-height: 132px; }
+  .topic-controls { width: 100%; justify-content: flex-end; }
+  .flow-controls button,.manage-button { min-height: 32px; }
+}
