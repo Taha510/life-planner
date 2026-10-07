@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/life-planner/"
+title = "Life Planner"
+description = "An offline-capable personal planner recreated from the supplied life planner, with daily checklists, progress tracking, calendar navigation, editable task text, and configurable tracker dates stored on the device."
+version = "1.0.0"
+id = "artifacts/life-planner"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/life-planner/" ]
+localPort = 21792
+
+[services.development]
+run = "pnpm --filter @workspace/life-planner run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/life-planner", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/life-planner/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21792"
+BASE_PATH = "/life-planner/"

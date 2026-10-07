@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Life Planner · Oct 2026 – Jun 2027</title>
+<style>
+:root{--bg:#f5f6fb;--card:#fff;--tx:#161a2b;--mu:#68708a;--bd:#e4e7f2;--ac:#6c5ce7;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d0f1a;--card:#161a2c;--tx:#eef0fb;--mu:#98a0bd;--bd:#262b44;--ac:#8b7dff}}
+:root[data-theme="dark"]{--bg:#0d0f1a;--card:#161a2c;--tx:#eef0fb;--mu:#98a0bd;--bd:#262b44;--ac:#8b7dff}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5;overflow-x:hidden}
+.bg{position:fixed;inset:0;z-index:-1;overflow:hidden}
+.bg i{position:absolute;border-radius:50%;filter:blur(80px);opacity:.28;animation:fl 18s ease-in-out infinite alternate}
+.bg i:nth-child(1){width:380px;height:380px;background:#6c5ce7;top:-80px;left:-80px}
+.bg i:nth-child(2){width:320px;height:320px;background:#00cec9;bottom:-60px;right:-60px;animation-delay:-6s}
+.bg i:nth-child(3){width:260px;height:260px;background:#fd79a8;top:45%;left:55%;animation-delay:-11s}
+@keyframes fl{to{transform:translate(60px,40px) scale(1.2)}}
+.wrap{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+.rv{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+.rv.in{opacity:1;transform:none}
+h1{font-size:clamp(28px,6vw,44px);margin:6px 0;letter-spacing:-.02em;background:linear-gradient(90deg,var(--ac),#00b8b0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--mu);margin:0 0 18px}
+.top{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;background:var(--card);border:1px solid var(--bd);border-radius:24px;padding:20px;box-shadow:0 10px 40px -20px rgba(80,70,200,.4)}
+.ring{position:relative;width:120px;height:120px}
+.ring svg{transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:10;stroke-linecap:round}
+.ring .t{stroke:var(--bd)}.ring .p{stroke:var(--ac);transition:stroke-dashoffset .9s cubic-bezier(.2,.7,.2,1)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:24px}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.chip{background:var(--bg);border:1px solid var(--bd);border-radius:14px;padding:6px 12px;font-size:13px;color:var(--mu)}
+.chip b{color:var(--tx)}
+.nav{display:flex;gap:8px;margin:18px 0 8px;align-items:center}
+.nav button,.nav input{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:9px 14px;cursor:pointer;transition:transform .2s,border-color .2s}
+.nav button:hover{transform:translateY(-2px);border-color:var(--ac)}
+.nav input{flex:1;min-width:0}
+.day{font-size:22px;margin:14px 0 4px}
+.note{background:linear-gradient(120deg,rgba(108,92,231,.14),rgba(0,206,201,.14));border:1px solid var(--bd);border-radius:16px;padding:12px 16px;margin:10px 0;font-size:14px}
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:12px 0 18px}
+.flow div{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:10px 12px;font-size:13px;color:var(--mu)}
+.flow b{display:block;color:var(--tx)}
+#cards{display:grid;gap:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:20px;padding:16px 18px;border-left:5px solid var(--c);animation:up .6s cubic-bezier(.2,.7,.2,1) both;transition:transform .3s,box-shadow .3s}
+.card:hover{transform:translateY(-3px);box-shadow:0 14px 30px -18px var(--c)}
+@keyframes up{from{opacity:0;transform:translateY(20px)}}
+.ch{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ch span.i{font-size:24px}.ch h3{margin:0;font-size:17px;flex:1}
+.ch em{font-style:normal;font-size:12px;background:var(--c);color:#fff;border-radius:99px;padding:3px 10px}
+.bar{height:5px;background:var(--bd);border-radius:9px;overflow:hidden;margin-bottom:10px}
+.bar i{display:block;height:100%;width:0;background:var(--c);transition:width .7s cubic-bezier(.2,.7,.2,1)}
+.t{display:flex;gap:10px;align-items:flex-start;padding:7px 4px;border-radius:10px;cursor:pointer;font-size:15px;transition:background .2s}
+.t:hover{background:var(--bg)}
+.t input{display:none}
+.t u{flex:none;width:22px;height:22px;border:2px solid var(--c);border-radius:7px;margin-top:1px;display:grid;place-items:center;text-decoration:none;transition:background .25s,transform .25s}
+.t u::after{content:"";width:6px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) scale(0);transition:transform .25s;margin-top:-2px}
+.t input:checked+u{background:var(--c);animation:pop .35s}
+.t input:checked+u::after{transform:rotate(45deg) scale(1)}
+.t input:checked~s{opacity:.5;text-decoration:line-through}
+.t s{text-decoration:none;transition:opacity .3s}
+@keyframes pop{50%{transform:scale(1.3)}}
+h2{font-size:24px;margin:40px 0 12px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px}
+.tabs button{flex:none;font:inherit;font-size:13px;color:var(--mu);background:var(--card);border:1px solid var(--bd);border-radius:99px;padding:6px 14px;cursor:pointer;transition:all .25s}
+.tabs button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px}
+.cal small{text-align:center;color:var(--mu);font-size:11px}
+.cal button{aspect-ratio:1;border:1px solid var(--bd);border-radius:12px;background:color-mix(in srgb,var(--ac) calc(var(--r)*85%),var(--card));color:var(--tx);font:inherit;font-size:13px;cursor:pointer;transition:transform .2s;animation:up .4s both}
+.cal button:hover{transform:scale(1.12)}
+.cal button.sel{outline:2px solid var(--ac);outline-offset:2px}
+.cal button:disabled{opacity:.25;cursor:default}
+.tips{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.tip{background:var(--card);border:1px solid var(--bd);border-radius:20px;padding:16px 18px;transition:transform .3s}
+.tip:hover{transform:translateY(-4px)}
+.tip h3{margin:0 0 6px;font-size:16px}
+.tip ul{margin:0;padding-left:18px;color:var(--mu);font-size:14px}
+.tip li{margin:4px 0}
+.warn{border-color:#fdcb6e}
+footer{text-align:center;color:var(--mu);font-size:13px;margin-top:40px}
+@media(max-width:520px){.top{grid-template-columns:1fr;justify-items:center;text-align:center}.stats{justify-content:center}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="bg"><i></i><i></i><i></i></div>
+<div class="wrap">
+<header class="rv"><h1>Life Planner</h1><p class="sub">8 Oct 2026 → 1 Jun 2027 · one day at a time</p></header>
+<section class="top rv">
+<div class="ring"><svg width="120" height="120" viewBox="0 0 120 120"><circle class="t" cx="60" cy="60" r="52"/><circle class="p" id="rp" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/></svg><b id="pct">0%</b></div>
+<div><div style="font-weight:600;font-size:18px">Today's progress</div>
+<div class="stats"><span class="chip">Day <b id="sN"></b> / <b id="sT"></b></span><span class="chip">Left <b id="sL"></b> days</span><span class="chip">🔥 Streak <b id="sS">0</b></span><span class="chip">Total <b id="sH">14–15h</b>/day</span></div></div>
+</section>
+<div class="nav rv"><button id="pv" aria-label="Previous day">‹</button><input type="date" id="dp" min="2026-10-08" max="2027-06-01"><button id="nx" aria-label="Next day">›</button><button id="td">Today</button></div>
+<h2 class="day" id="dl"></h2>
+<div id="notes"></div>
+<div class="flow rv" id="flow"></div>
+<div id="cards"></div>
+
+<h2 class="rv">Calendar</h2>
+<div class="tabs rv" id="tabs"></div>
+<div class="cal rv" id="cal"></div>
+
+<h2 class="rv">Tips &amp; tricks</h2>
+<div class="tips" id="tips"></div>
+<footer class="rv">Consistency beats intensity. Tick things off, review on Sundays, adjust when life happens.</footer>
+</div>
+<script>
+const S=new Date(2026,9,8),E=new Date(2027,5,1),D=864e5;
+const N=Math.round((E-S)/D)+1;
+const $=id=>document.getElementById(id);
+const key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const parse=s=>{const[a,b,c]=s.split("-").map(Number);return new Date(a,b-1,c)};
+const add=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const store={get(k){try{return JSON.parse(localStorage.getItem("lp:"+k))||[]}catch(e){return[]}},set(k,v){try{localStorage.setItem("lp:"+k,JSON.stringify(v))}catch(e){}}};
+
+const PH=[["Networking basics","TCP/IP, DNS, HTTP, Wireshark"],["Linux & command line","permissions, processes, Bash"],["Python for security","scripting, sockets, automation"],["Web security","OWASP Top 10, Burp Suite"],["Cryptography","hashing, TLS, encryption basics"],["Windows & Active Directory","attacks and defence"],["Pentest methodology","recon, scanning, exploitation"],["CTF training","picoCTF, TryHackMe, HackTheBox"],["Blue team & SOC","logs, SIEM, detection"],["Digital forensics","disk, memory, network artifacts"],["Cloud security","AWS/Azure basics, IAM"],["Cert prep & portfolio","Security+ style exam, write-ups"]];
+const ERA=["Ancient civilizations (Mesopotamia, Egypt, Greece)","Rome & Late Antiquity","Rise of Islam & the early caliphates","Islamic Golden Age & the medieval world","Mongols, Ottomans & great empires","Renaissance & Age of Exploration","Revolutions & the Industrial age","World Wars & the modern world"];
+const lab=["TryHackMe/HackTheBox room on ","Home-lab: set up a VM and practise ","Write a script related to ","PortSwigger Academy / web lab for ","CTF challenge (picoCTF, HTB) on ","Mini-project on GitHub about ","Write-up of your best lab on "];
+const drill=["Linux commands drill","Python scripting kata","nmap / netcat practice","Regex & log reading","Crypto puzzle (CryptoHack)","Analyse a pcap in Wireshark","Read one CVE and explain it simply"];
+const uni=["Plan the week: deadlines, assignments, exams","Hardest course: practice problems (60 min)","Assignment / project progress (60 min)","Past exam questions, timed (60 min)","Textbook chapter + one-page summary","Ask questions: professor, classmates, forum","Catch-up block + organise notes"];
+const de=["Cases: Nominativ vs Akkusativ","Dativ & prepositions","Verbs: Präsens & Perfekt","Word order (V2, Nebensätze)","Adjective endings","Listening: Nicos Weg / DW + shadowing","Write a 10-line diary in German"];
+const en=["Podcast + 10 new words","Write a 200-word essay","Read a security blog, note vocabulary","Record a 3-min speaking clip","Grammar & collocations","Watch a talk without subtitles","Summarise a cyber topic in English"];
+const isl=["Tafsir of a short surah","Seerah: one episode of the Prophet's ﷺ life","Hadith: one of the 40 Nawawi + reflection","Fiqh / aqeedah basics: one lesson","Learn one Name of Allah and its meaning","Jumu'ah, Surah Al-Kahf, extra dua & salawat","Quran: review old + memorise 3 new ayat"];
+const rd=["Set weekly goals (3 max)","Review your habit tracker","Learn a method: Pomodoro or time-blocking","Communication: practise explaining an idea","Money basics (20 min): budgeting / saving","Improve note-taking system / touch typing","Digital detox hour + plan next week"];
+
+const TOP={uni:["🎓","University","2h","#4d7cfe"],cy:["🛡️","Cybersecurity","5–6h","#00b894"],lg:["🌍","German + English","3h","#e17055"],hi:["🏛️","History","1h","#d4a017"],is:["🌙","Learning about Islam","1h","#0a9396"],rd:["📚","Reading & self-improvement","2h","#e84393"],bo:["✨","Boosters","extras","#8e7cff"]};
+
+function plan(d){
+ const n=Math.round((d-S)/D),w=Math.floor(n/7),x=d.getDay(),m=d.getMonth();
+ const exam=(m==0||m==4);
+ const P=PH[Math.min(Math.floor(w/3),11)],pn=P[0];
+ const era=ERA[Math.min((d.getFullYear()-2026)*12+m-9,7)];
+ const cy=["Theory block (90 min): "+pn+" — "+P[1],"Hands-on lab (2h): "+lab[x]+pn,"Notes & flashcards (45 min)","Daily drill (45 min): "+drill[x],"Optional +1h: CTF, cert prep or security news"];
+ const bo=["30 min walk or workout","Sleep by 23:30 (7+ hours) and drink water","Plan tomorrow in 5 minutes"];
+ if(x==0)bo.push("Weekly review (30 min): what worked, what to change");
+ if(d.getDate()==1)bo.push("Monthly check: update goals and pick one thing to improve");
+ return{uni:[exam?"Exam mode: timed past paper (90 min)":uni[x],"Review lecture notes and rewrite key points (30 min)","Active recall: close notes and self-quiz (20 min)"],
+ cy,lg:["German (90 min): "+de[x],"English (90 min): "+en[x],"Anki review (15 min, split through the day)"],
+ hi:["Read or watch (40 min): "+era,"Write a 5-line summary + why it matters","Add one event to your personal timeline"],
+ is:["Quran: read and reflect (15 min)",isl[x]+" (35 min)","Dhikr and dua (10 min)"],
+ rd:["Read 30–40 pages of your book (60 min)","Write the key takeaway (20 min)","Skill of the day: "+rd[x]+" (20 min)","Reflect: 3 wins, 1 lesson (10 min)"],bo};
+}
+function banners(d){
+ const a=[],t=d.getTime();
+ if(t>=new Date(2027,1,8)&&t<=new Date(2027,2,9))a.push("🌙 Ramadan is expected around now (dates approximate). Consider lowering the load and keeping the core hours: cybersecurity, university and Quran.");
+ if(d.getMonth()==0)a.push("📝 January: exam season for many universities. Past papers replace your regular uni task.");
+ if(d.getMonth()==4)a.push("📝 May: final exam stretch. Past papers replace your regular uni task.");
+ if(d.getDay()==5)a.push("🕌 Friday: Jumu'ah. Keep the day lighter if you need, but protect your cybersecurity block.");
+ if(d.getDay()==0)a.push("🗓️ Sunday: weekly review. Look back, fix your weakest area, plan the week.");
+ if(+d==+S)a.push("🚀 Day one. Start small, finish every block, and let the habit build.");
+ if(+d==+E)a.push("🏁 Final day! Review everything you achieved since October.");
+ return a;
+}
+const FLOW=[["Morning","Islam 1h → Cybersecurity deep block"],["Midday","University 2h"],["Afternoon","German + English, split in 2 sessions"],["Evening","Cybersecurity lab → History 1h"],["Night","Reading 2h → plan tomorrow"]];
+$("flow").innerHTML=FLOW.map(f=>"<div><b>"+f[0]+"</b>"+f[1]+"</div>").join("");
+
+let cur=new Date(),calM=null;
+if(cur<S||cur>E)cur=new Date(S);
+cur=new Date(cur.getFullYear(),cur.getMonth(),cur.getDate());
+
+function ratio(d){const p=plan(d),k=key(d),dn=store.get(k);let t=0;for(const g in p)t+=p[g].length;return dn.length/t}
+function tot(p){let t=0;for(const g in p)t+=p[g].length;return t}
+function render(){
+ const k=key(cur),p=plan(cur),dn=store.get(k);
+ $("dp").value=k;
+ $("dl").textContent=cur.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+ $("notes").innerHTML=banners(cur).map(b=>"<div class='note'>"+b+"</div>").join("");
+ $("cards").innerHTML=Object.keys(p).map((g,gi)=>{const[ic,nm,h,c]=TOP[g];
+  return "<div class='card' style='--c:"+c+";animation-delay:"+gi*70+"ms' data-g='"+g+"'><div class='ch'><span class='i'>"+ic+"</span><h3>"+nm+"</h3><em>"+h+"</em></div><div class='bar'><i></i></div>"+
+  p[g].map((t,i)=>{const id=g+i;return "<label class='t'><input type='checkbox' data-id='"+id+"'"+(dn.includes(id)?" checked":"")+"><u></u><s>"+t+"</s></label>"}).join("")+"</div>"}).join("");
+ document.querySelectorAll("#cards input").forEach(i=>i.onchange=()=>{let a=store.get(k);a=i.checked?[...new Set([...a,i.dataset.id])]:a.filter(v=>v!=i.dataset.id);store.set(k,a);upd()});
+ upd();drawCal();
+}
+function upd(){
+ const k=key(cur),p=plan(cur),dn=store.get(k),t=tot(p);
+ const r=dn.length/t;$("rp").style.strokeDashoffset=326.7*(1-r);$("pct").textContent=Math.round(r*100)+"%";
+ document.querySelectorAll(".card").forEach(c=>{const g=c.dataset.g,n=p[g].length,d=dn.filter(v=>v.startsWith(g)&&v.length==g.length+1).length;c.querySelector(".bar i").style.width=d/n*100+"%"});
+ const n=Math.round((cur-S)/D)+1;$("sN").textContent=n;$("sT").textContent=N;$("sL").textContent=N-n;
+ let s=0;for(let i=Math.round((new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate())-S)/D);i>=0&&i<N;i--){if(ratio(add(S,i))>=.7)s++;else if(i<Math.round((new Date()-S)/D))break}
+ $("sS").textContent=s;
+ const cb=document.querySelector("#cal .sel");if(cb)cb.style.setProperty("--r",r);
+}
+const go=n=>{const d=add(cur,n);if(d>=S&&d<=E){cur=d;calM=null;render()}};
+$("pv").onclick=()=>go(-1);$("nx").onclick=()=>go(1);
+$("td").onclick=()=>{const t=new Date();cur=t<S||t>E?new Date(S):new Date(t.getFullYear(),t.getMonth(),t.getDate());calM=null;render()};
+$("dp").onchange=e=>{const d=parse(e.target.value);if(d>=S&&d<=E){cur=d;calM=null;render()}};
+
+const MN=["Oct 2026","Nov 2026","Dec 2026","Jan 2027","Feb 2027","Mar 2027","Apr 2027","May 2027","Jun 2027"];
+function drawCal(){
+ const mi=calM===null?(cur.getFullYear()-2026)*12+cur.getMonth()-9:calM;calM=mi;
+ $("tabs").innerHTML=MN.map((m,i)=>"<button class='"+(i==mi?"on":"")+"' data-i='"+i+"'>"+m+"</button>").join("");
+ $("tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{calM=+b.dataset.i;drawCal()});
+ const f=new Date(2026,9+mi,1),dim=new Date(2026,10+mi,0).getDate(),off=(f.getDay()+6)%7;
+ let h="MTWTFSS".split("").map(l=>"<small>"+l+"</small>").join("")+"<span></span>".repeat(off);
+ for(let i=1;i<=dim;i++){const d=new Date(2026,9+mi,i),ok=d>=S&&d<=E;
+  h+="<button style='--r:"+(ok?ratio(d):0)+";animation-delay:"+i*12+"ms' data-d='"+key(d)+"' class='"+(key(d)==key(cur)?"sel":"")+"'"+(ok?"":" disabled")+">"+i+"</button>"}
+ $("cal").innerHTML=h;
+ $("cal").querySelectorAll("button:not(:disabled)").forEach(b=>b.onclick=()=>{cur=parse(b.dataset.d);render();window.scrollTo({top:0,behavior:"smooth"})});
+}
+
+const TIPS=[["⚠️ Be realistic","warn",["14–15 focused hours a day is a very heavy load. If you feel burnt out, trim the optional hour first, then shorten the lowest-priority block.","Keep one lighter day each week and never skip sleep. Tired study is slow study."]],
+["⏱️ Study smarter",0,["Work in 50/10 blocks: 50 minutes focus, 10 minutes break.","Active recall and spaced repetition beat re-reading.","Explain a topic out loud as if teaching a beginner (Feynman method)."]],
+["🛡️ Cybersecurity",0,["Labs over videos: aim for 70% hands-on.","Keep a write-up for every lab. It becomes your portfolio.","Only practise on systems you own or platforms that allow it (TryHackMe, HackTheBox, PortSwigger).","Build a small home lab with VirtualBox: Kali plus a vulnerable VM."]],
+["🌍 Languages",0,["Shadow native speakers: repeat sentences right after hearing them.","Use Anki daily, small and steady. Add words from real content only.","Switch your phone and some apps to German."]],
+["🌙 Faith & mindset",0,["Anchor Islam study to a fixed time, such as right after Fajr.","Small daily consistency with the Quran beats occasional marathons."]],
+["🧠 Focus",0,["Phone in another room during blocks.","Time-block the next day every night.","Start with the hardest task while your energy is highest."]],
+["💪 Body & energy",0,["Walk or exercise 30 minutes daily. It improves focus and memory.","Sleep 7–8 hours, drink water, take a short break each hour, and follow the 20-20-20 eye rule."]],
+["🏁 Staying on track",0,["Do the weekly review every Sunday.","Never miss twice: if you skip a day, resume the next one.","Celebrate milestones, like finishing a phase or a certificate."]]];
+$("tips").innerHTML=TIPS.map(t=>"<div class='tip rv "+(t[1]||"")+"'><h3>"+t[0]+"</h3><ul>"+t[2].map(x=>"<li>"+x+"</li>").join("")+"</ul></div>").join("");
+
+render();
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{threshold:.1});
+document.querySelectorAll(".rv").forEach(e=>io.observe(e));
+</script>
+</body>
+</html>
