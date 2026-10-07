@@ -89,8 +89,8 @@ h1 { font-size: clamp(28px,6vw,44px); margin: 6px 0; letter-spacing: -.02em; bac
 .header-line { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
 .theme-toggle { border:1px solid var(--bd); border-radius:12px; background:var(--card); color:var(--tx); padding:8px 12px; cursor:pointer; }
 .top { display:grid; grid-template-columns:auto 1fr; gap:20px; align-items:center; background:var(--card); border:1px solid var(--bd); border-radius:24px; padding:20px; box-shadow:0 10px 40px -20px rgba(80,70,200,.4); }
-.ring { position:relative; width:120px; height:120px; }
-.ring svg { transform:rotate(-90deg); outline:0; border:0; }
+.ring { position:relative; width:120px; height:120px; outline:none!important; border:0!important; box-shadow:none!important; }
+.ring svg { display:block; transform:rotate(-90deg); outline:none!important; border:0!important; box-shadow:none!important; background:transparent!important; }
 .ring circle { fill:none; stroke-width:10; stroke-linecap:round; }
 .ring .track { stroke:var(--bd); }.ring .progress { stroke:var(--ac); transition:stroke-dashoffset .9s cubic-bezier(.2,.7,.2,1); }
 .ring b { position:absolute; inset:0; display:grid; place-items:center; font-size:24px; }
