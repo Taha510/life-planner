@@ -34,7 +34,7 @@ jobs:
         run: pnpm --filter @workspace/life-planner run build
         env:
           PORT: 8888
-          BASE_PATH: /${{ github.event.repository.name }}/
+          BASE_PATH: /life-planner/
 
       - uses: actions/configure-pages@v5
 
