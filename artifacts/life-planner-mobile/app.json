@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Life Planner",
+    "slug": "life-planner-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "life-planner-mobile",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "com.lifeplanner.mobile",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.lifeplanner.mobile",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#f5f6fb"
+      }
+    },
+    "web": {
+      "favicon": "./assets/images/icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "@react-native-community/datetimepicker"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
