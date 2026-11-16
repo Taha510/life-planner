@@ -1,5 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useState } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
 import {
   CATEGORIES,
   belongsToTopic,
@@ -14,6 +20,7 @@ import {
   type FlowItem,
   type PlannerState,
   type ThemePreference,
+  type Tracker,
   type Topic,
 } from '@/lib/planner';
 
@@ -35,6 +42,43 @@ function stringArrays(value: unknown): Record<string, string[]> {
     }
   }
   return result;
+}
+
+function savedTrackers(value: unknown): Tracker[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (tracker): tracker is Tracker =>
+      isRecord(tracker) &&
+      typeof tracker.id === 'string' &&
+      typeof tracker.name === 'string' &&
+      typeof tracker.unit === 'string' &&
+      typeof tracker.increment === 'number' &&
+      Number.isFinite(tracker.increment) &&
+      tracker.increment > 0 &&
+      (tracker.goal === null ||
+        (typeof tracker.goal === 'number' &&
+          Number.isFinite(tracker.goal) &&
+          tracker.goal > 0)) &&
+      typeof tracker.color === 'string',
+  );
+}
+
+function savedTrackerValues(
+  value: unknown,
+): PlannerState['trackerValues'] {
+  if (!isRecord(value)) return {};
+  const days: PlannerState['trackerValues'] = {};
+  for (const [day, entries] of Object.entries(value)) {
+    if (!isRecord(entries)) continue;
+    const counts: Record<string, number> = {};
+    for (const [id, amount] of Object.entries(entries)) {
+      if (typeof amount === 'number' && Number.isFinite(amount) && amount >= 0) {
+        counts[id] = amount;
+      }
+    }
+    days[day] = counts;
+  }
+  return days;
 }
 
 function restoreState(raw: string): PlannerState {
@@ -125,6 +169,8 @@ function restoreState(raw: string): PlannerState {
     overrides: isRecord(parsed.overrides)
       ? (parsed.overrides as PlannerState['overrides'])
       : {},
+    trackers: savedTrackers(parsed.trackers),
+    trackerValues: savedTrackerValues(parsed.trackerValues),
     theme,
     structure: {
       customTopics,
@@ -166,7 +212,7 @@ function removeTaskOverrides(
   );
 }
 
-export function usePlanner() {
+function usePlannerController() {
   const [state, setState] = useState<PlannerState | null>(null);
   const [ready, setReady] = useState(false);
   const [storageError, setStorageError] = useState<string | null>(null);
@@ -411,6 +457,76 @@ export function usePlanner() {
       };
     });
 
+  const addTracker = (
+    name: string,
+    unit: string,
+    increment: number,
+    goal: number | null,
+  ) =>
+    update((current) => {
+      const palette = ['#4d7cfe', '#00b894', '#e17055', '#d4a017', '#8e7cff', '#e84393'];
+      const tracker: Tracker = {
+        id: `tracker-${createId()}`,
+        name,
+        unit,
+        increment,
+        goal,
+        color: palette[current.trackers.length % palette.length],
+      };
+      return { ...current, trackers: [...current.trackers, tracker] };
+    });
+  const editTracker = (tracker: Tracker) =>
+    update((current) => ({
+      ...current,
+      trackers: current.trackers.map((item) =>
+        item.id === tracker.id ? tracker : item,
+      ),
+    }));
+  const deleteTracker = (id: string) =>
+    update((current) => ({
+      ...current,
+      trackers: current.trackers.filter((tracker) => tracker.id !== id),
+      trackerValues: Object.fromEntries(
+        Object.entries(current.trackerValues)
+          .map(([day, entries]) => {
+            const next = { ...entries };
+            delete next[id];
+            return [day, next] as const;
+          })
+          .filter(([, entries]) => Object.keys(entries).length > 0),
+      ),
+    }));
+  const adjustTracker = (id: string, amount: number) =>
+    update((current) => {
+      const day = current.trackerValues[current.selectedDate] ?? {};
+      const nextAmount = Math.max(
+        0,
+        Math.round(((day[id] ?? 0) + amount + Number.EPSILON) * 100) / 100,
+      );
+      return {
+        ...current,
+        trackerValues: {
+          ...current.trackerValues,
+          [current.selectedDate]: { ...day, [id]: nextAmount },
+        },
+      };
+    });
+  const setTrackerValue = (id: string, amount: number) =>
+    update((current) => {
+      if (!Number.isFinite(amount)) return current;
+      const day = current.trackerValues[current.selectedDate] ?? {};
+      return {
+        ...current,
+        trackerValues: {
+          ...current.trackerValues,
+          [current.selectedDate]: {
+            ...day,
+            [id]: Math.max(0, Math.round((amount + Number.EPSILON) * 100) / 100),
+          },
+        },
+      };
+    });
+
   return {
     state,
     ready,
@@ -431,5 +547,25 @@ export function usePlanner() {
     deleteTopic,
     addTask,
     deleteTask,
+    addTracker,
+    editTracker,
+    deleteTracker,
+    adjustTracker,
+    setTrackerValue,
   };
+}
+
+const PlannerContext = createContext<ReturnType<typeof usePlannerController> | null>(null);
+
+export function PlannerProvider({ children }: { children: ReactNode }) {
+  const planner = usePlannerController();
+  return React.createElement(PlannerContext.Provider, { value: planner }, children);
+}
+
+export function usePlanner() {
+  const planner = useContext(PlannerContext);
+  if (!planner) {
+    throw new Error('usePlanner must be used inside PlannerProvider.');
+  }
+  return planner;
 }

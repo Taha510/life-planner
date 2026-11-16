@@ -221,13 +221,15 @@ function PlannerContent({ planner }: { planner: PlannerController }) {
         {
           backgroundColor: colors.background,
           paddingTop: Platform.OS === 'web' ? 67 : insets.top,
-          paddingBottom: Platform.OS === 'web' ? 34 : insets.bottom,
         },
       ]}
     >
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          Platform.OS === 'web' && { paddingBottom: 108 },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >

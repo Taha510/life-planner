@@ -7,6 +7,14 @@ export type Topic = {
   icon: string;
   color: string;
 };
+export type Tracker = {
+  id: string;
+  name: string;
+  unit: string;
+  increment: number;
+  goal: number | null;
+  color: string;
+};
 export type ThemePreference = 'system' | 'light' | 'dark';
 export type DateRange = { startDate: string; endDate: string };
 export type DailyPlan = Record<string, Task[]>;
@@ -25,6 +33,8 @@ export type PlannerState = {
   selectedDate: string;
   checks: Record<string, string[]>;
   overrides: Record<string, Record<string, string>>;
+  trackers: Tracker[];
+  trackerValues: Record<string, Record<string, number>>;
   structure: PlannerStructure;
   theme: ThemePreference;
 };
@@ -368,6 +378,8 @@ export function createDefaultState(): PlannerState {
     selectedDate: clampDate(today, range),
     checks: {},
     overrides: {},
+    trackers: [],
+    trackerValues: {},
     structure: defaultStructure(),
     theme: 'system',
   };
