@@ -4,6 +4,11 @@ import {
   FLOW, isValidIsoDate, makePlan, monthLabel, monthStart, TIPS, toDate,
   type CategoryMeta, type Task,
 } from './planner-data';
+import { TrackerPanel } from './components/TrackerPanel';
+import {
+  loadTrackerValues, loadTrackers, TRACKER_COLORS,
+  type Tracker, type TrackerInput, type TrackerValues,
+} from './tracker-data';
 
 type DateRange = { startDate: string; endDate: string };
 type Checks = Record<string, string[]>;
@@ -153,9 +158,12 @@ function initialSelectedDate(range: DateRange): string {
 function App() {
   const [range, setRange] = useState<DateRange>(loadRange);
   const [selectedDate, setSelectedDate] = useState(() => initialSelectedDate(loadRange()));
+  const [activeView, setActiveView] = useState<'plan' | 'track'>('plan');
   const [checks, setChecks] = useState<Checks>(loadChecks);
   const [overrides, setOverrides] = useState<Overrides>(() => loadJson<Overrides>('overrides', {}));
   const [structure, setStructure] = useState<PlannerStructure>(loadStructure);
+  const [trackers, setTrackers] = useState<Tracker[]>(loadTrackers);
+  const [trackerValues, setTrackerValues] = useState<TrackerValues>(loadTrackerValues);
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = loadJson<Theme | null>('theme', null);
     return saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'system';
@@ -177,6 +185,8 @@ function App() {
   }, [theme]);
   useEffect(() => saveLocal('range', range), [range]);
   useEffect(() => saveLocal('structure', structure), [structure]);
+  useEffect(() => saveLocal('trackers', trackers), [trackers]);
+  useEffect(() => saveLocal('tracker-values', trackerValues), [trackerValues]);
   useEffect(() => {
     saveLocal('checks', checks);
     Object.entries(checks).forEach(([date, ids]) => saveLocal(date, ids));
@@ -333,6 +343,35 @@ function App() {
   };
   const changeDay = (offset: number) => goToDate(dateKey(addDays(selected, offset)));
   const goToday = () => goToDate(clampDate(today, range));
+  const saveTracker = (input: TrackerInput) => {
+    if (input.id) {
+      setTrackers((previous) => previous.map((tracker) =>
+        tracker.id === input.id ? { ...tracker, ...input, color: tracker.color } : tracker));
+      return;
+    }
+    setTrackers((previous) => [...previous, {
+      ...input,
+      id: `tracker-${crypto.randomUUID()}`,
+      color: TRACKER_COLORS[previous.length % TRACKER_COLORS.length],
+    }]);
+  };
+  const deleteTracker = (id: string) => {
+    setTrackers((previous) => previous.filter((tracker) => tracker.id !== id));
+    setTrackerValues((previous) => Object.fromEntries(
+      Object.entries(previous).map(([date, counts]) => {
+        const nextCounts = { ...counts };
+        delete nextCounts[id];
+        return [date, nextCounts];
+      }).filter(([, counts]) => Object.keys(counts).length > 0),
+    ));
+  };
+  const adjustTrackerCount = (id: string, amount: number) => {
+    setTrackerValues((previous) => {
+      const current = previous[selectedDate] ?? {};
+      const next = Math.max(0, Math.round(((current[id] ?? 0) + amount + Number.EPSILON) * 100) / 100);
+      return { ...previous, [selectedDate]: { ...current, [id]: next } };
+    });
+  };
 
   const toggleTheme = () => {
     const current = theme === 'system'
@@ -399,6 +438,26 @@ function App() {
           </div>
         </header>
 
+        <nav className="app-tabs reveal" role="tablist" aria-label="Planner views">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeView === 'plan'}
+            className={activeView === 'plan' ? 'on' : ''}
+            onClick={() => setActiveView('plan')}
+            data-testid="tab-plan"
+          >Plan</button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeView === 'track'}
+            className={activeView === 'track' ? 'on' : ''}
+            onClick={() => setActiveView('track')}
+            data-testid="tab-track"
+          >Track</button>
+        </nav>
+
+        {activeView === 'plan' && <div className="plan-view">
         <section className="top reveal" aria-label="Today's progress">
           <div className="ring" role="img" aria-label={`${Math.round(selectedProgress * 100)} percent of today's tasks complete`}>
             <svg width="120" height="120" viewBox="0 0 120 120" aria-hidden="true">
@@ -686,6 +745,22 @@ function App() {
           ))}
         </section>
         <footer className="reveal">Consistency beats intensity. Tick things off, review on Sundays, adjust when life happens.</footer>
+        </div>}
+        {activeView === 'track' && (
+          <TrackerPanel
+            trackers={trackers}
+            values={trackerValues}
+            selectedDate={selectedDate}
+            startDate={range.startDate}
+            endDate={range.endDate}
+            onSelectDate={goToDate}
+            onStepDay={changeDay}
+            onGoToday={goToday}
+            onSaveTracker={saveTracker}
+            onDeleteTracker={deleteTracker}
+            onAdjustCount={adjustTrackerCount}
+          />
+        )}
       </main>
     </>
   );
