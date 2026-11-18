@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type KeyboardEvent } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type KeyboardEvent, type MouseEvent } from 'react';
+import { flushSync } from 'react-dom';
 import {
   addDays, banners, CATEGORIES, dateKey, dayDistance, DEFAULT_END, DEFAULT_START,
   FLOW, isValidIsoDate, makePlan, monthLabel, monthStart, TIPS, toDate,
@@ -14,6 +15,9 @@ type DateRange = { startDate: string; endDate: string };
 type Checks = Record<string, string[]>;
 type Overrides = Record<string, Record<string, string>>;
 type Theme = 'light' | 'dark' | 'system';
+type ViewTransitionDocument = Document & {
+  startViewTransition?: (updateCallback: () => void) => { finished: Promise<void> };
+};
 type FlowItem = { id: string; time: string; description: string };
 type Topic = CategoryMeta & { id: string };
 type PlannerStructure = {
@@ -373,11 +377,53 @@ function App() {
     });
   };
 
-  const toggleTheme = () => {
+  const toggleTheme = (event: MouseEvent<HTMLButtonElement>) => {
     const current = theme === 'system'
       ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
       : theme;
-    setTheme(current === 'dark' ? 'light' : 'dark');
+    const nextTheme: Theme = current === 'dark' ? 'light' : 'dark';
+    const root = document.documentElement;
+    const applyTheme = () => {
+      root.dataset.theme = nextTheme;
+      saveLocal('theme', nextTheme);
+      setTheme(nextTheme);
+    };
+    const transitionDocument = document as ViewTransitionDocument;
+    const startViewTransition = transitionDocument.startViewTransition;
+    if (!startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      applyTheme();
+      return;
+    }
+
+    const button = event.currentTarget;
+    const bounds = button.getBoundingClientRect();
+    const originX = event.detail > 0 ? event.clientX : bounds.left + bounds.width / 2;
+    const originY = event.detail > 0 ? event.clientY : bounds.top + bounds.height / 2;
+    const farthestX = Math.max(originX, window.innerWidth - originX);
+    const farthestY = Math.max(originY, window.innerHeight - originY);
+    const revealRadius = Math.ceil(Math.hypot(farthestX, farthestY));
+    root.style.setProperty('--theme-reveal-x', `${originX}px`);
+    root.style.setProperty('--theme-reveal-y', `${originY}px`);
+    root.style.setProperty('--theme-reveal-radius', `${revealRadius}px`);
+
+    let transition: ReturnType<NonNullable<ViewTransitionDocument['startViewTransition']>>;
+    try {
+      transition = startViewTransition.call(transitionDocument, () => {
+        flushSync(applyTheme);
+      });
+    } catch {
+      root.style.removeProperty('--theme-reveal-x');
+      root.style.removeProperty('--theme-reveal-y');
+      root.style.removeProperty('--theme-reveal-radius');
+      applyTheme();
+      return;
+    }
+    const clearRevealOrigin = () => {
+      root.style.removeProperty('--theme-reveal-x');
+      root.style.removeProperty('--theme-reveal-y');
+      root.style.removeProperty('--theme-reveal-radius');
+    };
+    void transition.finished.then(clearRevealOrigin, clearRevealOrigin);
   };
   const beginEdit = (taskId: string, text: string) => {
     setEditingId(taskId);
