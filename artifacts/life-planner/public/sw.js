@@ -1,4 +1,4 @@
-const CACHE_NAME = "life-planner-shell-v1";
+const CACHE_NAME = "life-planner-shell-v2";
 const APP_ROOT = new URL("./", self.location.href);
 
 self.addEventListener("install", (event) => {

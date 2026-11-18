@@ -29,6 +29,13 @@ type PlannerStructure = {
   flow: FlowItem[];
 };
 
+function syncBrowserThemeColor(theme: Theme) {
+  const dark = theme === 'dark'
+    || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+    ?.setAttribute('content', dark ? '#0d0f1a' : '#f5f6fb');
+}
+
 function loadJson<T>(key: string, fallback: T): T {
   try {
     const parsed: unknown = JSON.parse(localStorage.getItem(`lp:${key}`) ?? 'null');
@@ -185,7 +192,13 @@ function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme === 'system' ? '' : theme;
+    syncBrowserThemeColor(theme);
     saveLocal('theme', theme);
+    if (theme !== 'system') return;
+    const colorScheme = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleColorSchemeChange = () => syncBrowserThemeColor('system');
+    colorScheme.addEventListener('change', handleColorSchemeChange);
+    return () => colorScheme.removeEventListener('change', handleColorSchemeChange);
   }, [theme]);
   useEffect(() => saveLocal('range', range), [range]);
   useEffect(() => saveLocal('structure', structure), [structure]);
@@ -385,6 +398,7 @@ function App() {
     const root = document.documentElement;
     const applyTheme = () => {
       root.dataset.theme = nextTheme;
+      syncBrowserThemeColor(nextTheme);
       saveLocal('theme', nextTheme);
       setTheme(nextTheme);
     };
